@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import ora from 'ora';
 import { createApi } from '../lib/api.js';
-import { hr, listingRow, badge, ERR, BRAND, DIM } from '../lib/format.js';
+import { hr, listingRow, badge, votes, ERR, BRAND, DIM, WARN, OK } from '../lib/format.js';
 
 export const myCommand = new Command('my')
   .description('View and manage your own listings (requires authentication)');
@@ -57,6 +57,41 @@ myCommand
         listingRow(i + 1, s.name, s.tags ?? [], s.totalVotes ?? 0);
         console.log(`     ${badge(s.status)}  ${DIM(`https://discordnest.xyz/servers/${s.vanity}`)}`);
       });
+      console.log('');
+    } catch (e: any) {
+      spinner.fail(ERR(`Failed: ${e.message}`));
+      process.exit(1);
+    }
+  });
+
+myCommand
+  .command('votes')
+  .description('Show your recent vote history')
+  .action(async () => {
+    const api     = createApi(true);
+    const spinner = ora('Fetching your vote history…').start();
+
+    try {
+      const voteList = await api.get('/users/me/votes') as any[];
+      spinner.stop();
+
+      if (!voteList?.length) {
+        console.log(DIM('\n  No votes yet. Try: dn vote <vanity>\n'));
+        return;
+      }
+
+      console.log(`\n${BRAND('Your Recent Votes')} ${DIM(`(${voteList.length})`)}`);
+      hr();
+      voteList.slice(0, 20).forEach((v: any) => {
+        const listing = v.bot ?? v.server;
+        const kind    = v.bot ? 'bot' : 'server';
+        const name    = listing?.name ?? 'Unknown';
+        const date    = new Date(v.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const path    = v.bot ? `bots/${listing?.vanity}` : `servers/${listing?.vanity}`;
+        console.log(`  ${name.padEnd(22).slice(0, 22)} ${DIM(kind.padEnd(7))} ${DIM(date)}`);
+        if (listing?.vanity) console.log(DIM(`     https://discordnest.xyz/${path}`));
+      });
+      if (voteList.length > 20) console.log(DIM(`\n  …and ${voteList.length - 20} older votes.`));
       console.log('');
     } catch (e: any) {
       spinner.fail(ERR(`Failed: ${e.message}`));
