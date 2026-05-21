@@ -1,6 +1,6 @@
 {
   "name": "discordnest-cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Official CLI for DiscordNest — search bots, servers, vote and manage your listings from the terminal",
   "author": "DiscordNest",
   "license": "MIT",
