@@ -24,8 +24,12 @@ export function createApi(requiresAuth = false): AxiosInstance {
   instance.interceptors.response.use(
     (res) => res.data?.data ?? res.data,
     (err) => {
-      const msg = err.response?.data?.message ?? err.message ?? 'Request failed';
-      return Promise.reject(new Error(Array.isArray(msg) ? msg.join(', ') : msg));
+      const body = err.response?.data ?? {};
+      const msg = body.message ?? err.message ?? 'Request failed';
+      const error = new Error(Array.isArray(msg) ? msg.join(', ') : msg) as Error & { secondsRemaining?: number; status?: number };
+      error.secondsRemaining = body.secondsRemaining;
+      error.status = err.response?.status;
+      return Promise.reject(error);
     },
   );
 
